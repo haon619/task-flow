@@ -12,7 +12,7 @@ import FilterBar from './components/FilterBar'
 import TaskForm from './components/TaskForm'
 import { filterTasks, isFiltering, NO_FILTERS } from './filter'
 import type { Filters } from './filter'
-import type { Task, TaskStatus } from './types'
+import type { Task, TaskInput, TaskStatus } from './types'
 
 type LoadState = 'loading' | 'ready' | 'error'
 
@@ -45,8 +45,8 @@ function App() {
     setReloadKey((k) => k + 1)
   }
 
-  async function handleCreate(title: string, description: string) {
-    const created = await createTask(title, description)
+  async function handleCreate(input: TaskInput) {
+    const created = await createTask(input)
     setTasks((prev) => [...prev, created])
   }
 
@@ -65,9 +65,9 @@ function App() {
     }
   }
 
-  async function handleUpdate(id: number, title: string, description: string) {
+  async function handleUpdate(id: number, input: TaskInput) {
     try {
-      const updated = await updateTask(id, title, description)
+      const updated = await updateTask(id, input)
       setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
     } catch (err) {
       syncIfMissing(err)

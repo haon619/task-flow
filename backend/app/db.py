@@ -11,9 +11,19 @@ CREATE TABLE IF NOT EXISTS tasks (
     title TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL DEFAULT 'TODO'
-        CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE'))
+        CHECK (status IN ('TODO', 'IN_PROGRESS', 'DONE')),
+    priority TEXT NOT NULL DEFAULT 'NONE'
+        CHECK (priority IN ('NONE', 'LOW', 'MEDIUM', 'HIGH')),
+    assignee TEXT NOT NULL DEFAULT ''
 )
 """
+
+# R-008 이전에 만든 DB에 없는 컬럼. 기존 카드는 그대로 두고 기본값으로 채운다.
+ADDED_COLUMNS = {
+    "priority": "TEXT NOT NULL DEFAULT 'NONE' "
+    "CHECK (priority IN ('NONE', 'LOW', 'MEDIUM', 'HIGH'))",
+    "assignee": "TEXT NOT NULL DEFAULT ''",
+}
 
 
 def db_path() -> Path:
@@ -32,6 +42,10 @@ def init_db() -> None:
     conn = connect()
     try:
         conn.execute(SCHEMA)
+        existing = {row["name"] for row in conn.execute("PRAGMA table_info(tasks)")}
+        for column, definition in ADDED_COLUMNS.items():
+            if column not in existing:
+                conn.execute(f"ALTER TABLE tasks ADD COLUMN {column} {definition}")
         conn.commit()
     finally:
         conn.close()

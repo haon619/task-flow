@@ -30,8 +30,15 @@ def create_task(
     body: TaskCreate, conn: sqlite3.Connection = Depends(get_conn)
 ) -> Task:
     cur = conn.execute(
-        "INSERT INTO tasks (title, description, status) VALUES (?, ?, ?)",
-        (body.title, body.description, TaskStatus.TODO.value),
+        "INSERT INTO tasks (title, description, status, priority, assignee) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (
+            body.title,
+            body.description,
+            TaskStatus.TODO.value,
+            body.priority.value,
+            body.assignee,
+        ),
     )
     conn.commit()
     return _to_task(_get_or_404(conn, cur.lastrowid))
@@ -42,10 +49,13 @@ def update_task(
     task_id: int, body: TaskUpdate, conn: sqlite3.Connection = Depends(get_conn)
 ) -> Task:
     # 상태는 이 요청으로 바뀌지 않는다.
-    _get_or_404(conn, task_id)
+    current = _get_or_404(conn, task_id)
+    priority = body.priority.value if body.priority is not None else current["priority"]
+    assignee = body.assignee if body.assignee is not None else current["assignee"]
     conn.execute(
-        "UPDATE tasks SET title = ?, description = ? WHERE id = ?",
-        (body.title, body.description, task_id),
+        "UPDATE tasks SET title = ?, description = ?, priority = ?, assignee = ? "
+        "WHERE id = ?",
+        (body.title, body.description, priority, assignee, task_id),
     )
     conn.commit()
     return _to_task(_get_or_404(conn, task_id))

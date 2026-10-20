@@ -1,4 +1,4 @@
-import type { Task, TaskStatus } from './types'
+import type { Task, TaskInput, TaskStatus } from './types'
 
 // 화면이 실패를 구분해서 안내할 수 있게 종류를 붙인다.
 // not_found: 이미 지운 카드. 화면이 목록을 다시 불러와 맞춘다.
@@ -43,12 +43,12 @@ export function listTasks(): Promise<Task[]> {
   return request<Task[]>('/api/tasks')
 }
 
-export function createTask(title: string, description: string): Promise<Task> {
-  return request<Task>('/api/tasks', jsonBody('POST', { title, description }))
+export function createTask(input: TaskInput): Promise<Task> {
+  return request<Task>('/api/tasks', jsonBody('POST', input))
 }
 
-export function updateTask(id: number, title: string, description: string): Promise<Task> {
-  return request<Task>(`/api/tasks/${id}`, jsonBody('PATCH', { title, description }))
+export function updateTask(id: number, input: TaskInput): Promise<Task> {
+  return request<Task>(`/api/tasks/${id}`, jsonBody('PATCH', input))
 }
 
 export function updateTaskStatus(id: number, status: TaskStatus): Promise<Task> {

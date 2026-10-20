@@ -98,6 +98,39 @@ h1 {
   margin: 0.4rem 0 0;
 }
 
+.field {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.card .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+}
+
+.badge {
+  border-radius: 999px;
+  padding: 0.05rem 0.5rem;
+  background: #e5e7eb;
+  color: #1f2933;
+}
+
+.badge-medium {
+  background: #fef3c7;
+}
+
+.badge-high {
+  background: #fee2e2;
+  color: #b42318;
+}
+
+.assignee {
+  color: #52606d;
+}
+
 .card p {
   margin: 0.25rem 0 0;
   color: #52606d;

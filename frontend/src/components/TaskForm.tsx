@@ -1,14 +1,18 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { ASSIGNEE_MAX_LENGTH, PRIORITIES } from '../types'
+import type { Priority, TaskInput } from '../types'
 
 interface Props {
   disabled: boolean
-  onCreate: (title: string, description: string) => Promise<void>
+  onCreate: (input: TaskInput) => Promise<void>
 }
 
 function TaskForm({ disabled, onCreate }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
+  const [priority, setPriority] = useState<Priority>('NONE')
+  const [assignee, setAssignee] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -22,9 +26,11 @@ function TaskForm({ disabled, onCreate }: Props) {
     setError(null)
     setSubmitting(true)
     try {
-      await onCreate(title.trim(), description)
+      await onCreate({ title: title.trim(), description, priority, assignee: assignee.trim() })
       setTitle('')
       setDescription('')
+      setPriority('NONE')
+      setAssignee('')
     } catch (err) {
       // 실패하면 입력한 내용을 지우지 않는다.
       setError(err instanceof Error ? err.message : '등록하지 못했습니다.')
@@ -33,23 +39,47 @@ function TaskForm({ disabled, onCreate }: Props) {
     }
   }
 
+  const off = disabled || submitting
+
   return (
     <form className="task-form" onSubmit={handleSubmit} noValidate>
       <input
         aria-label="제목"
         placeholder="제목 (필수)"
         value={title}
-        disabled={disabled || submitting}
+        disabled={off}
         onChange={(e) => setTitle(e.target.value)}
       />
       <input
         aria-label="설명"
         placeholder="설명 (선택)"
         value={description}
-        disabled={disabled || submitting}
+        disabled={off}
         onChange={(e) => setDescription(e.target.value)}
       />
-      <button type="submit" disabled={disabled || submitting}>
+      <label className="field">
+        우선순위
+        <select
+          value={priority}
+          disabled={off}
+          onChange={(e) => setPriority(e.target.value as Priority)}
+        >
+          {PRIORITIES.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+      <input
+        aria-label="담당자"
+        placeholder="담당자 (선택)"
+        maxLength={ASSIGNEE_MAX_LENGTH}
+        value={assignee}
+        disabled={off}
+        onChange={(e) => setAssignee(e.target.value)}
+      />
+      <button type="submit" disabled={off}>
         등록
       </button>
       {error && (
