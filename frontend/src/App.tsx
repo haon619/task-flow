@@ -8,7 +8,10 @@ import {
   updateTaskStatus,
 } from './api'
 import Board from './components/Board'
+import FilterBar from './components/FilterBar'
 import TaskForm from './components/TaskForm'
+import { filterTasks, isFiltering, NO_FILTERS } from './filter'
+import type { Filters } from './filter'
 import type { Task, TaskStatus } from './types'
 
 type LoadState = 'loading' | 'ready' | 'error'
@@ -16,6 +19,7 @@ type LoadState = 'loading' | 'ready' | 'error'
 function App() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loadState, setLoadState] = useState<LoadState>('loading')
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
   // 값을 바꾸면 목록을 다시 불러온다.
   const [reloadKey, setReloadKey] = useState(0)
 
@@ -79,11 +83,15 @@ function App() {
     }
   }
 
+  const visibleTasks = filterTasks(tasks, filters)
+
   return (
     <main>
       <h1>Task Flow</h1>
 
       <TaskForm disabled={loadState !== 'ready'} onCreate={handleCreate} />
+
+      <FilterBar filters={filters} onChange={setFilters} />
 
       {loadState === 'loading' && <p className="notice">불러오는 중…</p>}
       {loadState === 'error' && (
@@ -98,8 +106,16 @@ function App() {
         <p className="notice">아직 카드가 없습니다. 위에서 첫 카드를 등록해 보세요.</p>
       )}
 
+      {loadState === 'ready' &&
+        tasks.length > 0 &&
+        visibleTasks.length === 0 &&
+        isFiltering(filters) && (
+          <p className="notice">조건에 맞는 카드가 없습니다.</p>
+        )}
+
       <Board
-        tasks={tasks}
+        tasks={visibleTasks}
+        visibleStatus={filters.status}
         onStatusChange={handleStatusChange}
         onUpdate={handleUpdate}
         onDelete={handleDelete}
