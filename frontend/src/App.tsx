@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react'
-import { createTask, listTasks } from './api'
+import {
+  ApiError,
+  createTask,
+  deleteTask,
+  listTasks,
+  updateTask,
+  updateTaskStatus,
+} from './api'
 import Board from './components/Board'
 import TaskForm from './components/TaskForm'
-import type { Task } from './types'
+import type { Task, TaskStatus } from './types'
 
 type LoadState = 'loading' | 'ready' | 'error'
 
@@ -39,6 +46,39 @@ function App() {
     setTasks((prev) => [...prev, created])
   }
 
+  // 대상 카드가 이미 없으면 목록을 다시 불러와 맞춘다. 오류는 카드가 안내하도록 다시 던진다.
+  function syncIfMissing(err: unknown): never {
+    if (err instanceof ApiError && err.kind === 'not_found') reload()
+    throw err
+  }
+
+  async function handleStatusChange(id: number, status: TaskStatus) {
+    try {
+      const updated = await updateTaskStatus(id, status)
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+    } catch (err) {
+      syncIfMissing(err)
+    }
+  }
+
+  async function handleUpdate(id: number, title: string, description: string) {
+    try {
+      const updated = await updateTask(id, title, description)
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+    } catch (err) {
+      syncIfMissing(err)
+    }
+  }
+
+  async function handleDelete(id: number) {
+    try {
+      await deleteTask(id)
+      setTasks((prev) => prev.filter((t) => t.id !== id))
+    } catch (err) {
+      syncIfMissing(err)
+    }
+  }
+
   return (
     <main>
       <h1>Task Flow</h1>
@@ -58,7 +98,12 @@ function App() {
         <p className="notice">아직 카드가 없습니다. 위에서 첫 카드를 등록해 보세요.</p>
       )}
 
-      <Board tasks={tasks} />
+      <Board
+        tasks={tasks}
+        onStatusChange={handleStatusChange}
+        onUpdate={handleUpdate}
+        onDelete={handleDelete}
+      />
     </main>
   )
 }
