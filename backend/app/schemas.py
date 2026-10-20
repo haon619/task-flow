@@ -24,6 +24,18 @@ class TaskCreate(BaseModel):
     _check_title = field_validator("title")(_require_title)
 
 
+class TaskUpdate(BaseModel):
+    # 제목과 설명을 항상 함께 보낸다. 설명이 빠져 실수로 지워지는 일을 막는다.
+    title: str
+    description: str
+
+    _check_title = field_validator("title")(_require_title)
+
+
+class TaskStatusUpdate(BaseModel):
+    status: TaskStatus
+
+
 class Task(BaseModel):
     id: int
     title: str
