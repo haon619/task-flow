@@ -4,17 +4,21 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from .auth import session_secret
 from .db import init_db
+from .routes_auth import router as auth_router
 from .routes_tasks import router as tasks_router
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    session_secret()  # 비밀값이 없으면 시작하지 않는다.
     init_db()
     yield
 
 
 app = FastAPI(title="task-flow", lifespan=lifespan)
+app.include_router(auth_router)
 app.include_router(tasks_router)
 
 

@@ -1,126 +1,95 @@
-import { useEffect, useState } from 'react'
-import {
-  ApiError,
-  createTask,
-  deleteTask,
-  listTasks,
-  updateTask,
-  updateTaskStatus,
-} from './api'
-import Board from './components/Board'
-import FilterBar from './components/FilterBar'
-import TaskForm from './components/TaskForm'
-import { filterTasks, isFiltering, NO_FILTERS } from './filter'
-import type { Filters } from './filter'
-import type { Task, TaskInput, TaskStatus } from './types'
+import { useCallback, useEffect, useState } from 'react'
+import { ApiError, login, logout, me, register } from './api'
+import type { User } from './api'
+import BoardScreen from './BoardScreen'
 
-type LoadState = 'loading' | 'ready' | 'error'
+function AuthForm({ onDone }: { onDone: (user: User) => void }) {
+  const [mode, setMode] = useState<'login' | 'register'>('login')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState('')
 
-function App() {
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [loadState, setLoadState] = useState<LoadState>('loading')
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
-  // 값을 바꾸면 목록을 다시 불러온다.
-  const [reloadKey, setReloadKey] = useState(0)
-
-  useEffect(() => {
-    let cancelled = false
-    listTasks()
-      .then((list) => {
-        if (cancelled) return
-        setTasks(list)
-        setLoadState('ready')
-      })
-      .catch(() => {
-        // 실패하면 화면의 카드 표시는 바꾸지 않는다.
-        if (!cancelled) setLoadState('error')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [reloadKey])
-
-  function reload() {
-    setLoadState('loading')
-    setReloadKey((k) => k + 1)
-  }
-
-  async function handleCreate(input: TaskInput) {
-    const created = await createTask(input)
-    setTasks((prev) => [...prev, created])
-  }
-
-  // 대상 카드가 이미 없으면 목록을 다시 불러와 맞춘다. 오류는 카드가 안내하도록 다시 던진다.
-  function syncIfMissing(err: unknown): never {
-    if (err instanceof ApiError && err.kind === 'not_found') reload()
-    throw err
-  }
-
-  async function handleStatusChange(id: number, status: TaskStatus) {
+  async function submit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
     try {
-      const updated = await updateTaskStatus(id, status)
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+      const fn = mode === 'login' ? login : register
+      onDone(await fn(username, password))
     } catch (err) {
-      syncIfMissing(err)
+      if (err instanceof ApiError && err.kind === 'unauthorized') {
+        setError('아이디 또는 비밀번호가 맞지 않습니다.')
+      } else if (err instanceof ApiError && err.kind === 'invalid') {
+        setError('아이디는 1~50자, 비밀번호는 8자 이상이어야 합니다.')
+      } else {
+        setError(err instanceof Error ? err.message : '처리하지 못했습니다.')
+      }
     }
   }
-
-  async function handleUpdate(id: number, input: TaskInput) {
-    try {
-      const updated = await updateTask(id, input)
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
-    } catch (err) {
-      syncIfMissing(err)
-    }
-  }
-
-  async function handleDelete(id: number) {
-    try {
-      await deleteTask(id)
-      setTasks((prev) => prev.filter((t) => t.id !== id))
-    } catch (err) {
-      syncIfMissing(err)
-    }
-  }
-
-  const visibleTasks = filterTasks(tasks, filters)
 
   return (
     <main>
       <h1>Task Flow</h1>
-
-      <TaskForm disabled={loadState !== 'ready'} onCreate={handleCreate} />
-
-      <FilterBar filters={filters} onChange={setFilters} />
-
-      {loadState === 'loading' && <p className="notice">불러오는 중…</p>}
-      {loadState === 'error' && (
-        <p className="notice error" role="alert">
-          카드를 불러오지 못했습니다.{' '}
-          <button type="button" onClick={reload}>
-            다시 불러오기
-          </button>
-        </p>
-      )}
-      {loadState === 'ready' && tasks.length === 0 && (
-        <p className="notice">아직 카드가 없습니다. 위에서 첫 카드를 등록해 보세요.</p>
-      )}
-
-      {loadState === 'ready' &&
-        tasks.length > 0 &&
-        visibleTasks.length === 0 &&
-        isFiltering(filters) && (
-          <p className="notice">조건에 맞는 카드가 없습니다.</p>
+      <form onSubmit={submit}>
+        <h2>{mode === 'login' ? '로그인' : '가입'}</h2>
+        <input
+          aria-label="아이디"
+          placeholder="아이디"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+        />
+        <input
+          aria-label="비밀번호"
+          type="password"
+          placeholder="비밀번호 (8자 이상)"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button type="submit">{mode === 'login' ? '로그인' : '가입하고 시작'}</button>
+        <button
+          type="button"
+          onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+        >
+          {mode === 'login' ? '계정 만들기' : '로그인으로'}
+        </button>
+        {error && (
+          <p className="notice error" role="alert">
+            {error}
+          </p>
         )}
-
-      <Board
-        tasks={visibleTasks}
-        visibleStatus={filters.status}
-        onStatusChange={handleStatusChange}
-        onUpdate={handleUpdate}
-        onDelete={handleDelete}
-      />
+      </form>
     </main>
+  )
+}
+
+function App() {
+  // undefined: 확인 중, null: 로그인 안 됨
+  const [user, setUser] = useState<User | null | undefined>(undefined)
+
+  useEffect(() => {
+    me()
+      .then(setUser)
+      .catch(() => setUser(null))
+  }, [])
+
+  const handleUnauthorized = useCallback(() => setUser(null), [])
+
+  async function handleLogout() {
+    await logout().catch(() => undefined)
+    setUser(null)
+  }
+
+  if (user === undefined) return <p className="notice">불러오는 중…</p>
+  if (user === null) return <AuthForm onDone={setUser} />
+  return (
+    <>
+      <p className="notice">
+        {user.username}님 ·{' '}
+        <button type="button" onClick={handleLogout}>
+          로그아웃
+        </button>
+      </p>
+      <BoardScreen key={user.id} onUnauthorized={handleUnauthorized} />
+    </>
   )
 }
 

@@ -56,8 +56,11 @@ def test_list_is_in_creation_order(client):
 
 def test_cards_survive_restart(db_file):
     # R-006: 앱을 껐다 켜도(새 클라이언트, 같은 DB 파일) 카드가 남는다.
+    creds = {"username": "alice", "password": "password-1234"}
     with TestClient(app) as first:
+        first.post("/api/auth/register", json=creds)
         first.post("/api/tasks", json={"title": "남아야 함"})
     with TestClient(app) as second:
+        second.post("/api/auth/login", json=creds)
         titles = [t["title"] for t in second.get("/api/tasks").json()]
     assert titles == ["남아야 함"]
