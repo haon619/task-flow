@@ -103,25 +103,32 @@ def test_existing_db_is_migrated_without_losing_cards(db_file):
     conn.commit()
     conn.close()
 
-    with TestClient(app) as client:
-        cards = client.get("/api/tasks").json()
-        assert cards == [
-            {
-                "id": 1,
-                "title": "옛 카드",
-                "description": "설명",
-                "status": "DONE",
-                "priority": "NONE",
-                "assignee": "",
-            }
-        ]
-        # 새 컬럼으로 쓰기도 된다.
-        res = client.patch(
-            "/api/tasks/1",
-            json={"title": "옛 카드", "description": "설명", "priority": "HIGH"},
-        )
-        assert res.json()["priority"] == "HIGH"
+    # 시작하면 컬럼이 더해지고 옛 카드는 legacy 소유로 그대로 남는다. (D-018)
+    # legacy는 로그인할 수 없어서 API 대신 DB를 직접 읽는다.
+    with TestClient(app):
+        pass
+    conn = sqlite3.connect(db_file)
+    conn.row_factory = sqlite3.Row
+    row = conn.execute(
+        "SELECT t.id, t.title, t.description, t.status, t.priority, t.assignee, "
+        "u.username AS owner FROM tasks t JOIN users u ON u.id = t.owner_id"
+    ).fetchall()
+    assert [dict(r) for r in row] == [
+        {
+            "id": 1,
+            "title": "옛 카드",
+            "description": "설명",
+            "status": "DONE",
+            "priority": "NONE",
+            "assignee": "",
+            "owner": "legacy",
+        }
+    ]
+    conn.close()
 
-    # 두 번째 시작(이미 컬럼이 있는 DB)에서도 오류 없이 시작한다.
-    with TestClient(app) as client:
-        assert client.get("/api/tasks").json()[0]["priority"] == "HIGH"
+    # 두 번째 시작(이미 컬럼이 있는 DB)에서도 오류 없이 시작하고 카드 수가 같다.
+    with TestClient(app):
+        pass
+    conn = sqlite3.connect(db_file)
+    assert conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0] == 1
+    conn.close()
