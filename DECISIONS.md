@@ -116,7 +116,7 @@
 - 유효 상태: 유효 (사용자 승인: 단위 6 진행과 DB 컬럼 추가). 우선순위로 정렬 · 필터는 포함하지 않는다.
 
 ## D-016 로그인은 아이디 · 비밀번호와 서명된 세션 쿠키로 한다 (R-010)
-- 결정: `POST /api/auth/register`(직접 가입) · `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me`. 비밀번호는 `hashlib.scrypt`로 솔트와 함께 해시해 `users.password_hash`에만 저장하고 응답에 싣지 않는다. 세션은 `SESSION_SECRET`으로 HMAC 서명한 HttpOnly 쿠키다. `SESSION_SECRET`은 `backend/.env`(Git 제외)나 환경 변수로만 받고, 없으면 서버가 시작하지 않는다.
+- 결정: `POST /api/auth/register`(직접 가입) · `POST /api/auth/login` · `POST /api/auth/logout` · `GET /api/auth/me`. 비밀번호는 `hashlib.scrypt`로 솔트와 함께 해시해 `users.password_hash`에만 저장하고 응답에 싣지 않는다. 세션은 `SESSION_SECRET`으로 HMAC 서명한 HttpOnly 쿠키다. 로그인 유지 기간은 7일이고 서명된 토큰에 만료 시각이 들어 있어 지나면 401이다. `SESSION_SECRET`은 `backend/.env`(Git 제외)나 환경 변수로만 받고, 없으면 서버가 시작하지 않는다.
 - 검토한 대안: 외부 인증 라이브러리 설치(argon2-cffi, itsdangerous) / 소셜 로그인(PRD 비범위)
 - 이유: 패키지 설치 없이 표준 라이브러리로 충분하다. 사용자가 표준 라이브러리 방식을 승인했다.
 - 적용 범위: R-010

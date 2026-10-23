@@ -5,6 +5,7 @@ from pydantic import BaseModel, field_validator
 
 from .auth import (
     COOKIE_NAME,
+    SESSION_MAX_AGE,
     current_user,
     hash_password,
     make_session,
@@ -42,7 +43,11 @@ class User(BaseModel):
 
 def _set_session(response: Response, user_id: int) -> None:
     response.set_cookie(
-        COOKIE_NAME, make_session(user_id), httponly=True, samesite="lax"
+        COOKIE_NAME,
+        make_session(user_id),
+        max_age=SESSION_MAX_AGE,
+        httponly=True,
+        samesite="lax",
     )
 
 

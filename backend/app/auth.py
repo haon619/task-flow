@@ -3,6 +3,7 @@ import hmac
 import os
 import secrets
 import sqlite3
+import time
 from pathlib import Path
 
 from fastapi import Depends, HTTPException, Request
@@ -10,6 +11,7 @@ from fastapi import Depends, HTTPException, Request
 from .db import get_conn
 
 COOKIE_NAME = "session"
+SESSION_MAX_AGE = 7 * 24 * 3600  # 로그인 유지 기간: 7일 (D-016)
 ENV_FILE = Path(__file__).resolve().parent.parent / ".env"
 SCRYPT_PARAMS = {"n": 2**14, "r": 8, "p": 1}
 
@@ -45,19 +47,26 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(digest.hex(), digest_hex)
 
 
-def _sign(user_id: int) -> str:
-    return hmac.new(session_secret(), str(user_id).encode(), hashlib.sha256).hexdigest()
+def _sign(payload: str) -> str:
+    return hmac.new(session_secret(), payload.encode(), hashlib.sha256).hexdigest()
 
 
 def make_session(user_id: int) -> str:
-    return f"{user_id}.{_sign(user_id)}"
+    payload = f"{user_id}.{int(time.time()) + SESSION_MAX_AGE}"
+    return f"{payload}.{_sign(payload)}"
 
 
 def read_session(token: str | None) -> int | None:
+    """서명이 맞고 만료되지 않았으면 사용자 id, 아니면 None."""
     if not token:
         return None
-    user_id, _, sig = token.partition(".")
-    if not user_id.isdigit() or not hmac.compare_digest(sig, _sign(int(user_id))):
+    parts = token.split(".")
+    if len(parts) != 3 or not parts[0].isdigit() or not parts[1].isdigit():
+        return None
+    user_id, expires, sig = parts
+    if not hmac.compare_digest(sig, _sign(f"{user_id}.{expires}")):
+        return None
+    if int(expires) < time.time():
         return None
     return int(user_id)
 

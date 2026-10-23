@@ -118,3 +118,13 @@ def test_migration_keeps_all_tasks_and_assigns_legacy(tmp_path, monkeypatch):
     ).fetchall()
     conn.close()
     assert owners == [("legacy",)]
+
+
+def test_expired_session_gets_401(client, monkeypatch):
+    from app import auth
+
+    assert client.get("/api/tasks").status_code == 200
+    real = auth.time.time
+    monkeypatch.setattr(auth.time, "time", lambda: real() + auth.SESSION_MAX_AGE + 1)
+    assert client.get("/api/tasks").status_code == 401
+    assert client.get("/api/auth/me").status_code == 401
