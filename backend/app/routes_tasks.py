@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
@@ -8,9 +9,38 @@ from .schemas import Task, TaskCreate, TaskStatusUpdate, TaskUpdate, TaskStatus
 
 router = APIRouter(prefix="/api/tasks", tags=["tasks"])
 
+# "오늘"은 서버 시계의 한국 시간(KST) 날짜다. 고정 오프셋이라 tzdata가 필요 없다.
+KST = timezone(timedelta(hours=9))
+PRIORITY_ORDER = {"HIGH": 0, "NORMAL": 1, "LOW": 2}
+
+
+def today() -> date:
+    return datetime.now(KST).date()
+
+
+def _is_overdue(row: sqlite3.Row, today_iso: str) -> bool:
+    # 기한 초과: 마감일이 오늘보다 이전이고 완료가 아닐 때. 계산만 하고 저장하지 않는다.
+    return (
+        row["due_date"] is not None
+        and row["due_date"] < today_iso
+        and row["status"] != TaskStatus.DONE.value
+    )
+
 
 def _to_task(row: sqlite3.Row) -> Task:
-    return Task(**dict(row))
+    return Task(**dict(row), is_overdue=_is_overdue(row, today().isoformat()))
+
+
+def _sort_key(row: sqlite3.Row, today_iso: str) -> tuple:
+    # 기한 초과 → 우선순위 → 가까운 마감일(없으면 맨 뒤) → 만든 순서(ID)
+    due = row["due_date"]
+    return (
+        not _is_overdue(row, today_iso),
+        PRIORITY_ORDER[row["priority"]],
+        due is None,
+        due or "",
+        row["id"],
+    )
 
 
 def _get_or_404(
@@ -31,8 +61,10 @@ def list_tasks(
     user: sqlite3.Row = Depends(current_user),
 ) -> list[Task]:
     rows = conn.execute(
-        "SELECT * FROM tasks WHERE owner_id = ? ORDER BY id", (user["id"],)
+        "SELECT * FROM tasks WHERE owner_id = ?", (user["id"],)
     ).fetchall()
+    today_iso = today().isoformat()
+    rows.sort(key=lambda row: _sort_key(row, today_iso))
     return [_to_task(row) for row in rows]
 
 

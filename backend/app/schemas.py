@@ -96,3 +96,5 @@ class Task(BaseModel):
     priority: Priority
     assignee: str
     due_date: str | None = None
+    # 서버가 응답을 만들 때 계산한다. 저장하지 않고 요청으로 받지도 않는다.
+    is_overdue: bool = False
