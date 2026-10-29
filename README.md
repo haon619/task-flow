@@ -18,6 +18,12 @@ cp .env.example .env
 ```
 `SESSION_SECRET`이 없으면 API가 시작하지 않는다. `.env`는 `.gitignore`에 들어 있다.
 
+## AI 제안 키 (선택)
+`POST /api/tasks/suggest`(Task 우선순위 · 마감일 제안, R-012)를 쓰려면 Anthropic API 키가 필요하다. 값은 Git에 넣지 않고 `backend/.env`의 `ANTHROPIC_API_KEY=` 뒤에 직접 적거나 같은 이름의 환경 변수로 준다.
+- 키가 없어도 앱은 그대로 시작한다. 이 기능만 503 "AI 기능 꺼짐"으로 답한다.
+- 이 기능을 쓰면 카드의 제목 · 설명이 Anthropic으로 전송된다.
+- 제안은 돌려주기만 하고 저장하지 않는다. 화면은 아직 없다. (D-020)
+
 ## 기존 DB 마이그레이션 (이전 형식 DB가 있을 때)
 DB 형식은 alembic으로 바꾼다. 앱은 시작할 때 DB를 바꾸지 않고, 이전 형식이면 시작을 거절하고 이 절차를 안내한다.
 1. 앱(API · 화면)을 모두 종료한다.
