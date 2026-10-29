@@ -11,7 +11,7 @@ interface Props {
 function TaskForm({ disabled, onCreate }: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [priority, setPriority] = useState<Priority>('NONE')
+  const [priority, setPriority] = useState<Priority>('NORMAL')
   const [assignee, setAssignee] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -29,7 +29,7 @@ function TaskForm({ disabled, onCreate }: Props) {
       await onCreate({ title: title.trim(), description, priority, assignee: assignee.trim() })
       setTitle('')
       setDescription('')
-      setPriority('NONE')
+      setPriority('NORMAL')
       setAssignee('')
     } catch (err) {
       // 실패하면 입력한 내용을 지우지 않는다.

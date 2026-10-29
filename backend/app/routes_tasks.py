@@ -42,8 +42,8 @@ def create_task(
     user: sqlite3.Row = Depends(current_user),
 ) -> Task:
     cur = conn.execute(
-        "INSERT INTO tasks (title, description, status, priority, assignee, owner_id) "
-        "VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO tasks (title, description, status, priority, assignee, owner_id, "
+        "due_date) VALUES (?, ?, ?, ?, ?, ?, ?)",
         (
             body.title,
             body.description,
@@ -51,6 +51,7 @@ def create_task(
             body.priority.value,
             body.assignee,
             user["id"],
+            body.due_date,
         ),
     )
     conn.commit()
@@ -66,10 +67,13 @@ def update_task(
     current = _get_or_404(conn, task_id, user["id"])
     priority = body.priority.value if body.priority is not None else current["priority"]
     assignee = body.assignee if body.assignee is not None else current["assignee"]
+    due_date = (
+        body.due_date if "due_date" in body.model_fields_set else current["due_date"]
+    )
     conn.execute(
-        "UPDATE tasks SET title = ?, description = ?, priority = ?, assignee = ? "
-        "WHERE id = ? AND owner_id = ?",
-        (body.title, body.description, priority, assignee, task_id, user["id"]),
+        "UPDATE tasks SET title = ?, description = ?, priority = ?, assignee = ?, "
+        "due_date = ? WHERE id = ? AND owner_id = ?",
+        (body.title, body.description, priority, assignee, due_date, task_id, user["id"]),
     )
     conn.commit()
     return _to_task(_get_or_404(conn, task_id, user["id"]))

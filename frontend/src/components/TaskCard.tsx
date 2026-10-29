@@ -123,9 +123,9 @@ function TaskCard({ task, onStatusChange, onUpdate, onDelete }: Props) {
   return (
     <li className="card">
       <strong>{task.title}</strong>
-      {(task.priority !== 'NONE' || task.assignee) && (
+      {(task.priority !== 'NORMAL' || task.assignee) && (
         <p className="meta">
-          {task.priority !== 'NONE' && (
+          {task.priority !== 'NORMAL' && (
             <span className={`badge badge-${task.priority.toLowerCase()}`}>
               우선순위 {priorityLabel}
             </span>

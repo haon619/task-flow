@@ -1,6 +1,6 @@
 export type TaskStatus = 'TODO' | 'IN_PROGRESS' | 'DONE'
 
-export type Priority = 'NONE' | 'LOW' | 'MEDIUM' | 'HIGH'
+export type Priority = 'LOW' | 'NORMAL' | 'HIGH'
 
 // 카드 입력값. 등록과 수정에서 같이 쓴다.
 export interface TaskInput {
@@ -13,12 +13,12 @@ export interface TaskInput {
 export interface Task extends TaskInput {
   id: number
   status: TaskStatus
+  due_date: string | null
 }
 
 export const PRIORITIES: { value: Priority; label: string }[] = [
-  { value: 'NONE', label: '없음' },
   { value: 'LOW', label: '낮음' },
-  { value: 'MEDIUM', label: '보통' },
+  { value: 'NORMAL', label: '보통' },
   { value: 'HIGH', label: '높음' },
 ]
 

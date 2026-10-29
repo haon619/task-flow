@@ -2,7 +2,7 @@
 
 개인용 Task 카드 관리 웹 앱. 설계는 [PRD.md](PRD.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DECISIONS.md](DECISIONS.md) 참고.
 
-현재 상태: M0 (기본 구조만 있음). 카드 기능, 데이터베이스, 로그인은 아직 없다.
+현재 상태: 카드 등록 · 수정 · 상태 변경 · 삭제, 우선순위 · 담당자, 가입 · 로그인과 사용자별 카드가 있다. 마감일은 API만 있고 화면 · 정렬은 아직 없다. (R-009, #19)
 
 ## 준비물
 - uv (Python 3.12는 uv가 관리)

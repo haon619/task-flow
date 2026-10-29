@@ -1,7 +1,7 @@
 # BUSINESS-RULES: 우선순위와 마감일 (R-009, #19)
 
 근거: [PRD.md](PRD.md) R-009 · [FEATURE-PROPOSAL.md](FEATURE-PROPOSAL.md) · [IMPACT-ANALYSIS.md](IMPACT-ANALYSIS.md) · [DECISIONS.md](DECISIONS.md) D-019.
-이 문서는 설계만 적는다. 코드는 아직 바뀌지 않았다.
+API는 우선순위 세 단계와 `due_date` 저장 · 검증까지 반영했다. 기한 초과 판정 · 정렬 · 화면 표시는 아직 구현하지 않았고, 아래 "아직 정하지 않은 것"이 풀린 뒤에 만든다.
 
 ## 확정한 규칙
 | 항목 | 규칙 | 근거 |

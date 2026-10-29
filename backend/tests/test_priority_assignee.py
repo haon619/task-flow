@@ -7,7 +7,7 @@ from app.main import app
 
 def test_defaults_when_not_given(client):
     card = client.post("/api/tasks", json={"title": "t"}).json()
-    assert card["priority"] == "NONE"
+    assert card["priority"] == "NORMAL"
     assert card["assignee"] == ""
 
 
@@ -49,25 +49,38 @@ def test_update_changes_priority_and_assignee(client):
 
 def test_update_without_them_keeps_current_values(client):
     card = client.post(
-        "/api/tasks", json={"title": "t", "priority": "MEDIUM", "assignee": "나"}
+        "/api/tasks", json={"title": "t", "priority": "NORMAL", "assignee": "나"}
     ).json()
     res = client.patch(
         f"/api/tasks/{card['id']}", json={"title": "새 제목", "description": ""}
     )
-    assert res.json()["priority"] == "MEDIUM"
+    assert res.json()["priority"] == "NORMAL"
     assert res.json()["assignee"] == "나"
 
 
-def test_update_can_clear_assignee_and_priority(client):
+def test_update_can_clear_assignee_and_set_priority_back_to_normal(client):
     card = client.post(
         "/api/tasks", json={"title": "t", "priority": "HIGH", "assignee": "나"}
     ).json()
     res = client.patch(
         f"/api/tasks/{card['id']}",
-        json={"title": "t", "description": "", "priority": "NONE", "assignee": ""},
+        json={"title": "t", "description": "", "priority": "NORMAL", "assignee": ""},
     )
-    assert res.json()["priority"] == "NONE"
+    assert res.json()["priority"] == "NORMAL"
     assert res.json()["assignee"] == ""
+
+
+def test_priority_null_is_rejected_and_card_keeps_value(client):
+    # D-019: 우선순위는 지울 수 없다. 옛 값(NONE · MEDIUM)도 더 이상 받지 않는다.
+    card = client.post("/api/tasks", json={"title": "t", "priority": "HIGH"}).json()
+    for bad in [None, "NONE", "MEDIUM"]:
+        res = client.patch(
+            f"/api/tasks/{card['id']}",
+            json={"title": "t", "description": "", "priority": bad},
+        )
+        assert res.status_code == 422
+    assert client.post("/api/tasks", json={"title": "t", "priority": None}).status_code == 422
+    assert client.get("/api/tasks").json()[0]["priority"] == "HIGH"
 
 
 def test_update_rejects_invalid_priority_and_keeps_card(client):
@@ -119,7 +132,7 @@ def test_existing_db_is_migrated_without_losing_cards(db_file):
             "title": "옛 카드",
             "description": "설명",
             "status": "DONE",
-            "priority": "NONE",
+            "priority": "NORMAL",
             "assignee": "",
             "owner": "legacy",
         }

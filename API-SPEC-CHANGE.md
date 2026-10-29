@@ -1,6 +1,6 @@
 # API-SPEC-CHANGE: priority · due_date (R-009, #19)
 
-기존 [API-SPEC.md](API-SPEC.md)는 고치지 않고 변경만 적는다. 규칙은 [BUSINESS-RULES.md](BUSINESS-RULES.md), 저장은 [DATA-MODEL.md](DATA-MODEL.md). 코드는 아직 바뀌지 않았다.
+기존 [API-SPEC.md](API-SPEC.md)는 고치지 않고 변경만 적는다. 규칙은 [BUSINESS-RULES.md](BUSINESS-RULES.md), 저장은 [DATA-MODEL.md](DATA-MODEL.md). 백엔드 API에 반영했다(`priority` · `due_date` 등록 · 수정 · 응답, 422 규칙). 화면은 우선순위 값만 맞췄고 마감일 입력 · 표시와 정렬은 아직 없다.
 
 ## 변경
 - 카드에 `priority`와 `due_date` 필드를 추가한다. 응답과 등록 · 수정 요청에서 쓴다.
