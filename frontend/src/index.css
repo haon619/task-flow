@@ -118,8 +118,17 @@ h1 {
   color: #1f2933;
 }
 
-.badge-medium {
-  background: #fef3c7;
+.badge-overdue {
+  background: #b42318;
+  color: #fff;
+}
+
+.card.overdue {
+  border-left: 4px solid #b42318;
+}
+
+.due-date {
+  color: #52606d;
 }
 
 .badge-high {

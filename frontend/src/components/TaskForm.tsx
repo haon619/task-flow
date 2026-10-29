@@ -13,6 +13,7 @@ function TaskForm({ disabled, onCreate }: Props) {
   const [description, setDescription] = useState('')
   const [priority, setPriority] = useState<Priority>('NORMAL')
   const [assignee, setAssignee] = useState('')
+  const [dueDate, setDueDate] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -26,11 +27,18 @@ function TaskForm({ disabled, onCreate }: Props) {
     setError(null)
     setSubmitting(true)
     try {
-      await onCreate({ title: title.trim(), description, priority, assignee: assignee.trim() })
+      await onCreate({
+        title: title.trim(),
+        description,
+        priority,
+        assignee: assignee.trim(),
+        due_date: dueDate || null,
+      })
       setTitle('')
       setDescription('')
       setPriority('NORMAL')
       setAssignee('')
+      setDueDate('')
     } catch (err) {
       // 실패하면 입력한 내용을 지우지 않는다.
       setError(err instanceof Error ? err.message : '등록하지 못했습니다.')
@@ -70,6 +78,15 @@ function TaskForm({ disabled, onCreate }: Props) {
             </option>
           ))}
         </select>
+      </label>
+      <label className="field">
+        마감일
+        <input
+          type="date"
+          value={dueDate}
+          disabled={off}
+          onChange={(e) => setDueDate(e.target.value)}
+        />
       </label>
       <input
         aria-label="담당자"

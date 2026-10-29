@@ -16,6 +16,7 @@ function TaskCard({ task, onStatusChange, onUpdate, onDelete }: Props) {
   const [description, setDescription] = useState(task.description)
   const [priority, setPriority] = useState<Priority>(task.priority)
   const [assignee, setAssignee] = useState(task.assignee)
+  const [dueDate, setDueDate] = useState(task.due_date ?? '')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -25,6 +26,7 @@ function TaskCard({ task, onStatusChange, onUpdate, onDelete }: Props) {
     setDescription(task.description)
     setPriority(task.priority)
     setAssignee(task.assignee)
+    setDueDate(task.due_date ?? '')
     setError(null)
     setEditing(true)
   }
@@ -51,7 +53,13 @@ function TaskCard({ task, onStatusChange, onUpdate, onDelete }: Props) {
       return
     }
     const ok = await run(() =>
-      onUpdate(task.id, { title: title.trim(), description, priority, assignee: assignee.trim() }),
+      onUpdate(task.id, {
+        title: title.trim(),
+        description,
+        priority,
+        assignee: assignee.trim(),
+        due_date: dueDate || null,
+      }),
     )
     if (ok) setEditing(false)
   }
@@ -92,6 +100,15 @@ function TaskCard({ task, onStatusChange, onUpdate, onDelete }: Props) {
               ))}
             </select>
           </label>
+          <label className="field">
+            마감일
+            <input
+              type="date"
+              value={dueDate}
+              disabled={busy}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
+          </label>
           <input
             aria-label="담당자"
             placeholder="담당자 (선택)"
@@ -121,15 +138,17 @@ function TaskCard({ task, onStatusChange, onUpdate, onDelete }: Props) {
   const priorityLabel = PRIORITIES.find((p) => p.value === task.priority)?.label
 
   return (
-    <li className="card">
+    <li className={task.is_overdue ? 'card overdue' : 'card'}>
       <strong>{task.title}</strong>
-      {(task.priority !== 'NORMAL' || task.assignee) && (
+      {(task.priority !== 'NORMAL' || task.assignee || task.due_date) && (
         <p className="meta">
+          {task.is_overdue && <span className="badge badge-overdue">기한 초과</span>}
           {task.priority !== 'NORMAL' && (
             <span className={`badge badge-${task.priority.toLowerCase()}`}>
               우선순위 {priorityLabel}
             </span>
           )}
+          {task.due_date && <span className="due-date">마감 {task.due_date}</span>}
           {task.assignee && <span className="assignee">담당 {task.assignee}</span>}
         </p>
       )}

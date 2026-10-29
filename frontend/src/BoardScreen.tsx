@@ -46,9 +46,19 @@ function BoardScreen({ onUnauthorized }: { onUnauthorized: () => void }) {
     setReloadKey((k) => k + 1)
   }
 
+  // 순서와 기한 초과 표시는 서버가 정한다. 바꾼 뒤에는 목록을 다시 받아 서버 순서를 그대로 쓴다.
+  // 다시 받지 못하면 응답으로 받은 카드만 반영한다.
+  async function refresh(fallback: (prev: Task[]) => Task[]) {
+    try {
+      setTasks(await listTasks())
+    } catch {
+      setTasks(fallback)
+    }
+  }
+
   async function handleCreate(input: TaskInput) {
     const created = await createTask(input)
-    setTasks((prev) => [...prev, created])
+    await refresh((prev) => [...prev, created])
   }
 
   // 대상 카드가 이미 없으면 목록을 다시 불러와 맞춘다. 오류는 카드가 안내하도록 다시 던진다.
@@ -60,7 +70,7 @@ function BoardScreen({ onUnauthorized }: { onUnauthorized: () => void }) {
   async function handleStatusChange(id: number, status: TaskStatus) {
     try {
       const updated = await updateTaskStatus(id, status)
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+      await refresh((prev) => prev.map((t) => (t.id === id ? updated : t)))
     } catch (err) {
       syncIfMissing(err)
     }
@@ -69,7 +79,7 @@ function BoardScreen({ onUnauthorized }: { onUnauthorized: () => void }) {
   async function handleUpdate(id: number, input: TaskInput) {
     try {
       const updated = await updateTask(id, input)
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+      await refresh((prev) => prev.map((t) => (t.id === id ? updated : t)))
     } catch (err) {
       syncIfMissing(err)
     }

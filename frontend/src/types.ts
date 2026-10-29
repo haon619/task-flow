@@ -8,12 +8,15 @@ export interface TaskInput {
   description: string
   priority: Priority
   assignee: string
+  // 날짜만(YYYY-MM-DD). null이면 마감일 없음. 수정에서 null을 보내면 지운다.
+  due_date: string | null
 }
 
 export interface Task extends TaskInput {
   id: number
   status: TaskStatus
-  due_date: string | null
+  // 서버가 계산해서 준다. 화면은 다시 계산하지 않는다.
+  is_overdue: boolean
 }
 
 export const PRIORITIES: { value: Priority; label: string }[] = [
