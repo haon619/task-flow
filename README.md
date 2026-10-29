@@ -2,7 +2,7 @@
 
 개인용 Task 카드 관리 웹 앱. 설계는 [PRD.md](PRD.md), [ARCHITECTURE.md](ARCHITECTURE.md), [DECISIONS.md](DECISIONS.md) 참고.
 
-현재 상태: 카드 등록 · 수정 · 상태 변경 · 삭제, 우선순위 · 담당자, 가입 · 로그인과 사용자별 카드가 있다. 마감일은 API만 있고 화면 · 정렬은 아직 없다. (R-009, #19)
+현재 상태: 카드 등록 · 수정 · 상태 변경 · 삭제, 우선순위 · 담당자, 가입 · 로그인과 사용자별 카드가 있다. 마감일(날짜만, 없어도 됨)과 기한 초과 표시가 있고, 목록은 서버가 기한 초과 → 우선순위 → 가까운 마감일 → ID 순으로 정렬한다. (R-009, #19)
 
 ## 준비물
 - uv (Python 3.12는 uv가 관리)
@@ -18,12 +18,17 @@ cp .env.example .env
 ```
 `SESSION_SECRET`이 없으면 API가 시작하지 않는다. `.env`는 `.gitignore`에 들어 있다.
 
-## 기존 DB 마이그레이션 (로그인 도입 전에 쓰던 DB가 있을 때)
+## 기존 DB 마이그레이션 (이전 형식 DB가 있을 때)
+DB 형식은 alembic으로 바꾼다. 앱은 시작할 때 DB를 바꾸지 않고, 이전 형식이면 시작을 거절하고 이 절차를 안내한다.
+1. 앱(API · 화면)을 모두 종료한다.
+2. `backend/data/task-flow.db`를 복사해서 백업한다. 되돌리기는 이 백업 파일로 바꿔 놓는 방법뿐이다. (downgrade는 없다)
+3. 이전한다.
 ```
 cd backend
-uv run python scripts/migrate_owner.py
+uv run alembic upgrade head
+uv run alembic current   # 0001 (head)가 나오면 끝
 ```
-실행 전에 `task-flow.db.bak`으로 백업하고, 기존 카드를 `legacy` 사용자에게 붙인다. 전후 카드 수가 같고 주인 없는 카드가 0건이면 "검증 통과"가 나온다. (D-018)
+리비전 `0001`이 하는 일: 주인 없는 카드를 로그인할 수 없는 `legacy` 사용자에게 붙이고(D-018), 우선순위를 LOW · NORMAL · HIGH로 바꾸고(NONE · MEDIUM → NORMAL), `due_date` 컬럼을 더한다(D-019). 전후 카드 수 · id · 소유자를 검증하고 틀리면 원본을 그대로 둔 채 멈춘다. 이미 새 형식인 DB에서는 아무것도 바꾸지 않는다.
 
 ## 인계: 사용자와 권한
 - 화면 첫 진입에서 가입하거나 로그인한다. 카드는 만든 사용자에게만 보인다.
