@@ -98,3 +98,19 @@ class Task(BaseModel):
     due_date: str | None = None
     # 서버가 응답을 만들 때 계산한다. 저장하지 않고 요청으로 받지도 않는다.
     is_overdue: bool = False
+
+
+class SuggestRequest(BaseModel):
+    title: str
+    description: str = ""
+
+    _check_title = field_validator("title")(_require_title)
+
+
+class SuggestResponse(BaseModel):
+    # AI가 낸 제안. 저장하지 않고 화면이 보여 주기만 한다. 허용 값 밖이면 검증에서 걸린다.
+    priority: Priority
+    due_date: str | None
+    reason: str
+
+    _check_due = field_validator("due_date")(_check_due_date)

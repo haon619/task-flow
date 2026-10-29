@@ -8,6 +8,7 @@ from .auth import session_secret
 from .db import init_db
 from .routes_auth import router as auth_router
 from .routes_tasks import router as tasks_router
+from .suggest import router as suggest_router
 
 
 @asynccontextmanager
@@ -20,6 +21,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="task-flow", lifespan=lifespan)
 app.include_router(auth_router)
 app.include_router(tasks_router)
+app.include_router(suggest_router)
 
 
 @app.exception_handler(sqlite3.Error)
