@@ -102,7 +102,7 @@ def test_status_change_keeps_priority_and_assignee(client):
     assert res.json()["assignee"] == "나"
 
 
-def test_existing_db_is_migrated_without_losing_cards(db_file):
+def test_existing_db_is_migrated_without_losing_cards(db_file, upgrade):
     # R-008 이전 형태의 DB를 직접 만든다. 컬럼을 더해도 기존 카드는 그대로여야 한다.
     conn = sqlite3.connect(db_file)
     conn.execute(
@@ -116,10 +116,9 @@ def test_existing_db_is_migrated_without_losing_cards(db_file):
     conn.commit()
     conn.close()
 
-    # 시작하면 컬럼이 더해지고 옛 카드는 legacy 소유로 그대로 남는다. (D-018)
+    # alembic으로 옮기면 컬럼이 더해지고 옛 카드는 legacy 소유로 그대로 남는다. (D-018)
     # legacy는 로그인할 수 없어서 API 대신 DB를 직접 읽는다.
-    with TestClient(app):
-        pass
+    upgrade()
     conn = sqlite3.connect(db_file)
     conn.row_factory = sqlite3.Row
     row = conn.execute(
@@ -139,7 +138,8 @@ def test_existing_db_is_migrated_without_losing_cards(db_file):
     ]
     conn.close()
 
-    # 두 번째 시작(이미 컬럼이 있는 DB)에서도 오류 없이 시작하고 카드 수가 같다.
+    # 다시 실행해도 아무것도 바꾸지 않고, 앱도 오류 없이 시작하며 카드 수가 같다.
+    upgrade()
     with TestClient(app):
         pass
     conn = sqlite3.connect(db_file)

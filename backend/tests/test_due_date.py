@@ -61,7 +61,7 @@ def test_other_users_card_due_date_is_404(client, other_client):
     assert _patch(other_client, card, due_date="2026-11-01").status_code == 404
 
 
-def test_old_priority_values_migrate_to_normal(db_file):
+def test_old_priority_values_migrate_to_normal(db_file, upgrade):
     # D-019: NONE · MEDIUM은 NORMAL로, LOW · HIGH는 그대로. 카드와 id는 유지된다.
     conn = sqlite3.connect(db_file)
     conn.execute(
@@ -84,7 +84,8 @@ def test_old_priority_values_migrate_to_normal(db_file):
     conn.commit()
     conn.close()
 
-    for _ in range(2):  # 두 번째 시작은 아무것도 바꾸지 않는다
+    for _ in range(2):  # 다시 실행해도 아무것도 바꾸지 않는다
+        upgrade()
         with TestClient(app):
             pass
         conn = sqlite3.connect(db_file)

@@ -90,7 +90,7 @@ def test_legacy_cannot_login_or_register(anon_client):
         assert res.status_code in (401, 409)
 
 
-def test_migration_keeps_all_tasks_and_assigns_legacy(tmp_path, monkeypatch):
+def test_migration_keeps_all_tasks_and_assigns_legacy(tmp_path, monkeypatch, upgrade):
     # R-008 이후 · 로그인 이전 형태의 기존 DB (owner_id, users 없음)
     path = tmp_path / "old.db"
     conn = sqlite3.connect(path)
@@ -105,8 +105,8 @@ def test_migration_keeps_all_tasks_and_assigns_legacy(tmp_path, monkeypatch):
     conn.commit()
     conn.close()
     monkeypatch.setenv("TASK_FLOW_DB", str(path))
-    db.init_db()
-    db.init_db()  # 두 번 실행해도 같다
+    upgrade()
+    upgrade()  # 두 번 실행해도 같다
     conn = sqlite3.connect(path)
     assert conn.execute("SELECT COUNT(*) FROM tasks").fetchone()[0] == 3
     assert (
